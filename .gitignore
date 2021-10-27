@@ -1,0 +1,5 @@
+test_dataset_A/*
+train_dataset/*
+checkpoints/*
+*.pth
+*.pyc
