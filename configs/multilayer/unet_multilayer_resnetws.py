@@ -1,5 +1,5 @@
 from configs.config import _CFG
-from configs.dataset_pytorch import *
+from configs.dataset_caffe import trainset, valset, testset
 
 config=_CFG(
     trainset=trainset,
@@ -7,16 +7,26 @@ config=_CFG(
     testset=testset,
     detector = _CFG(
         backbone=_CFG(
-            name="Resnet",
+            name="Resnet-ws",
             depth=50,
-            pretrained=True,
-            output_layers=[0, 1, 2, 3, 4],
-            frozen=4,
+            pretrained = "pretrained/resnetw50.pth",
+            out_indices=(0, 1, 2, 4),
+            num_stages=4,
+            strides=(1, 2, 2, 2),
+            dilations=(1, 1, 1, 1),
+            frozen_stages=4,
+            norm_cfg=dict(type='BN', requires_grad=False),
+            norm_eval=True,
+            style='pytorch',
+            small_kernel=True,
+            avg2max=True,
+            dilated_conv=True,
+            weak_backward=False,
         ),
         decoder=_CFG(
-            name="UNet-Complex-MultiLayer",
-            strides=[32, 16, 8, 4, 2],  # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-            feature_channel=[2048, 1024, 512, 256, 64],
+            name="UNet-MultiLayer",
+            strides=[8, 8, 4, 2],  # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+            feature_channel=[2048, 512, 256, 64],
             out_channel=32
         ),
         loss=[
@@ -29,7 +39,7 @@ config=_CFG(
         batch_size=1,
         print_freq=50,
         save_freq=10,
-        checkpoint_dir="checkpoints/UNet-Complex-MultiLayer",
+        checkpoint_dir="checkpoints/UNet-DICE-Resnetws",
         optimizer=_CFG(name="SGD", lr=0.01, momentum=0.96, weight_decay=0.0005,
                     paramwise_cfg=dict(bias_decay_mult=0., bias_lr_mult=2.)),
         scheduler=_CFG(
@@ -40,7 +50,7 @@ config=_CFG(
         # CRF=_CFG(
         #     ITER_MAX = 10,
         #     POS_W = 3,
-        #     POS_XY_STD = 3,
+        #     POS_XY_STD = 1,
         #     BI_W = 4,
         #     BI_XY_STD = 67,
         #     BI_RGB_STD = 3,

@@ -14,8 +14,8 @@ config=_CFG(
             frozen=4,
         ),
         decoder=_CFG(
-            name="UNet-Complex-MultiLayer",
-            strides=[32, 16, 8, 4, 2],  # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+            name="UNet-Heatmap",
+            strides=[32, 16, 8, 4, 2],
             feature_channel=[2048, 1024, 512, 256, 64],
             out_channel=32
         ),
@@ -29,7 +29,7 @@ config=_CFG(
         batch_size=1,
         print_freq=50,
         save_freq=10,
-        checkpoint_dir="checkpoints/UNet-Complex-MultiLayer",
+        checkpoint_dir="checkpoints/UNet-Heatmap",
         optimizer=_CFG(name="SGD", lr=0.01, momentum=0.96, weight_decay=0.0005,
                     paramwise_cfg=dict(bias_decay_mult=0., bias_lr_mult=2.)),
         scheduler=_CFG(

@@ -1,5 +1,8 @@
 test_dataset_A/*
 train_dataset/*
 checkpoints/*
+Dataset_BUSI_with_GT/*
+visualize*
+pretrained/*
 *.pth
 *.pyc

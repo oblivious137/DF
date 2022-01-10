@@ -10,14 +10,16 @@ config=_CFG(
             name="Resnet",
             depth=50,
             pretrained=True,
-            output_layers=[0, 1, 2, 3, 4],
+            output_layers=[1, 2, 3, 4],
             frozen=4,
         ),
         decoder=_CFG(
-            name="UNet-Complex-MultiLayer",
-            strides=[32, 16, 8, 4, 2],  # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-            feature_channel=[2048, 1024, 512, 256, 64],
-            out_channel=32
+            name="UPerNet",
+            strides=[32, 16, 8, 4],  # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+            feature_channel=[2048, 1024, 512, 256],
+            fpn_channel=256,
+            conv5_channel=512,
+            conv5_pooling=[]
         ),
         loss=[
             dict(type="DICELoss"),
@@ -25,18 +27,19 @@ config=_CFG(
     ),
 
     solver = _CFG(
-        max_epoch=160,
+        max_epoch=320,
         batch_size=1,
         print_freq=50,
         save_freq=10,
-        checkpoint_dir="checkpoints/UNet-Complex-MultiLayer",
+        checkpoint_dir="G:/DF/UPerNet",
         optimizer=_CFG(name="SGD", lr=0.01, momentum=0.96, weight_decay=0.0005,
                     paramwise_cfg=dict(bias_decay_mult=0., bias_lr_mult=2.)),
         scheduler=_CFG(
             policy='step',
-            step=[55, 130],
+            step=[140, 240],
             gamma=0.1,
         ),
+        # start_epoch = 120,
         # CRF=_CFG(
         #     ITER_MAX = 10,
         #     POS_W = 3,

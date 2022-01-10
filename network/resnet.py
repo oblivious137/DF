@@ -285,7 +285,7 @@ class ResNet(nn.Module):
         if 4 in self.output_layers: 
             output.append(x)
 
-        return output[::-1]
+        return output
 
     def _freeze_stages(self):
         if self.frozen >= 0:

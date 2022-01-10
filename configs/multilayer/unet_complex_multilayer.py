@@ -26,6 +26,7 @@ config=_CFG(
 
     solver = _CFG(
         max_epoch=160,
+        start_epoch=41,
         batch_size=1,
         print_freq=50,
         save_freq=10,
@@ -37,10 +38,11 @@ config=_CFG(
             step=[55, 130],
             gamma=0.1,
         ),
+        warmup=2,
         # CRF=_CFG(
         #     ITER_MAX = 10,
         #     POS_W = 3,
-        #     POS_XY_STD = 3,
+        #     POS_XY_STD = 1,
         #     BI_W = 4,
         #     BI_XY_STD = 67,
         #     BI_RGB_STD = 3,

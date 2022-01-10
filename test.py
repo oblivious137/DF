@@ -14,15 +14,15 @@ config_file = os.path.relpath(config_file)
 config_file = os.path.splitext(config_file)[0]
 config_file = '.'.join(os.path.split(config_file))
 
-
 cfg = None
 exec(f"from {config_file} import config as cfg")
 
-valset = UIDataset(cfg.valset)
-trainset = UIDataset(cfg.trainset)
+testset = UIDataset(cfg.testset)
 
 model = build_detector(cfg.detector)
 
-solver = Runner(model=model, trainset=trainset, valset=valset, load_from=args.load_from, cfg=cfg)
+solver = Runner(model=model, valset=testset, test_only=True, load_from=args.load_from, cfg=cfg)
 
-solver.run()
+import torch
+with torch.no_grad():
+    solver.run()

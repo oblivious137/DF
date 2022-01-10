@@ -32,6 +32,7 @@ class UIDataset(Dataset):
         img_info["shape"] = (img.shape[1], img.shape[0])
         img_info["padding"] = (0, 0)
         img_info["image"] = img
+        img_info["ori_image"] = img.copy()
         if self.load_mask:
             mask = (imageio.imread(os.path.join(self.maskroot, self.imgids[index]))>0).astype(np.uint8)
             mask = SegmentationMapsOnImage(mask, shape=img_info["image"].shape)
@@ -45,7 +46,7 @@ if __name__ == "__main__":
     import matplotlib.pyplot as plt
     import sys
     sys.path.append(r"D:\subject\DataFountain")
-    from configs.dataset import trainset
+    from configs.dataset_pytorch import trainset
     ds = UIDataset(trainset)
     for i in range(len(ds)):
         print(f"{i+1}th image, {ds.imgids[i]}")

@@ -28,28 +28,34 @@ class RandomSelect:
         return img_info
 
 class Compose:
-    def __init__(self, transforms=None, img_mean=None, img_std=None):
+    def __init__(self, style='pytorch', transforms=None, img_mean=None, img_std=None):
         self.transforms = list()
         for T in transforms:
             self.transforms.append(get_transform(T))
+        assert style in ('pytorch', 'caffe')
+        self.style=style
         if img_mean is not None:
-            self.mean = torch.tensor(img_mean).reshape((1, 1, 3))
-            self.std = torch.tensor(img_std).reshape((1, 1, 3))
-            if self.mean.max()>1.5:
-                self.mean = self.mean.float()/255
-                self.std = self.std.float()/255
-                input(f"Your std and mean is divided by 255: std={self.std}, mean={self.mean}")
+            self.mean = torch.tensor(img_mean).reshape((3, 1, 1)).float()
+            self.std = torch.tensor(img_std).reshape((3, 1, 1)).float()
     
     def __call__(self, img_info):
         for T in self.transforms:
             img_info = T(img_info)
-        img = torch.from_numpy(np.ascontiguousarray(img_info['image'])).float()/255
+        if self.style == 'caffe': # BGR Mode
+            img_info['image'] = img_info['image'][:,:,::-1]
+        img = torch.from_numpy(np.ascontiguousarray(img_info['image'])).permute((2,0,1)).float()
+        if self.style == 'pytorch':
+            img = img/255
         if hasattr(self, "mean"):
-            img_info['image'] = ((img-self.mean)/self.std).permute((2,0,1))
-            if 'label' in img_info:
-                img_info['label'] = torch.from_numpy(np.ascontiguousarray(img_info['label'].get_arr())).long()
-            if 'ori_label' in img_info:
-                img_info['ori_label'] = torch.from_numpy(np.ascontiguousarray(img_info['ori_label'].get_arr())).long()
+            img = ((img-self.mean)/self.std)
+        img_info['image'] = img
+        
+        if 'ori_image' in img_info:
+            img_info['ori_image'] = torch.from_numpy(np.ascontiguousarray(img_info['ori_image'])).permute((2,0,1)).float()/255
+        if 'label' in img_info:
+            img_info['label'] = torch.from_numpy(np.ascontiguousarray(img_info['label'].get_arr())).long()
+        if 'ori_label' in img_info:
+            img_info['ori_label'] = torch.from_numpy(np.ascontiguousarray(img_info['ori_label'].get_arr())).long()
         if 'shape' in img_info:
             img_info['shape'] = torch.tensor(img_info['shape'])
         if 'ori_shape' in img_info:
@@ -65,7 +71,7 @@ class Resize:
         self.pad_mode = pad_mode
     
     def __call__(self, img_info):
-        idx = int(torch.randint(0, len(self.shapes)-1, (1,)))
+        idx = int(torch.randint(0, len(self.shapes), (1,)))
         
         aw, ah = self.shapes[idx]
         w, h = img_info["shape"]
@@ -194,6 +200,18 @@ class ScaleY:
         if isinstance(scale, float):
             scale = (1-scale, 1+scale)
         self.scale = iaa.ScaleY(scale)
+    
+    def __call__(self, img_info):
+        if "label" in img_info:
+            img_info["image"], img_info["label"] = self.scale(image=img_info["image"], segmentation_maps=img_info["label"])
+        else:
+            img_info["image"] = self.scale(image=img_info["image"])
+        
+        return img_info
+
+class PiecewiseAffine:
+    def __init__(self, scale=(0.0, 0.01), **kwarg):
+        self.scale = iaa.PiecewiseAffine(scale, **kwarg)
     
     def __call__(self, img_info):
         if "label" in img_info:

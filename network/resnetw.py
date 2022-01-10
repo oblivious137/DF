@@ -81,6 +81,7 @@ class ResLayer(nn.Sequential):
                     norm_cfg=norm_cfg,
                     **kwargs))
         if weak_backward:
+            assert False, "Weak backward will make output smaller"
             layers.append(nn.MaxPool2d(kernel_size=2, stride=1, padding=0))
         super(ResLayer, self).__init__(*layers)
 
@@ -387,7 +388,7 @@ class Bottleneck(nn.Module):
         return out
 
 
-class ResNet(nn.Module):
+class ResNetW(nn.Module):
     """ResNet backbone.
     Args:
         depth (int): Depth of resnet, from {18, 34, 50, 101, 152}.
@@ -468,8 +469,9 @@ class ResNet(nn.Module):
                  small_kernel=False,
                  avg2max=False,
                  dilated_conv=False,
-                 weak_backward=False):
-        super(ResNet, self).__init__()
+                 weak_backward=False,
+                 pretrained=None):
+        super(ResNetW, self).__init__()
         if depth not in self.arch_settings:
             raise KeyError(f'invalid depth {depth} for resnet')
         self.depth = depth
@@ -483,7 +485,7 @@ class ResNet(nn.Module):
         self.dilations = dilations
         assert len(strides) == len(dilations) == num_stages
         self.out_indices = out_indices
-        assert max(out_indices) < num_stages
+        assert max(out_indices) <= num_stages
         self.style = style
         self.deep_stem = deep_stem or small_kernel
         self.avg_down = avg_down
@@ -551,6 +553,8 @@ class ResNet(nn.Module):
 
         self.feat_dim = self.block.expansion * base_channels * 2**(
             len(self.stage_blocks) - 1)
+        
+        self.init_weights(pretrained)
 
     def make_stage_plugins(self, plugins, stage_idx):
         """Make plugins for ResNet ``stage_idx`` th stage.
@@ -688,9 +692,9 @@ class ResNet(nn.Module):
                 Defaults to None.
         """
         if isinstance(pretrained, str):
-            logger = get_root_logger()
-            load_checkpoint(self, pretrained, strict=False, logger=logger)
+            load_checkpoint(self, pretrained, strict=False)
         elif pretrained is None:
+            input("No pretrain model for resnet-ws")
             for m in self.modules():
                 if isinstance(m, nn.Conv2d):
                     kaiming_init(m)
@@ -720,19 +724,21 @@ class ResNet(nn.Module):
             x = self.conv1(x)
             x = self.norm1(x)
             x = self.relu(x)
-        x = self.maxpool(x)
         outs = []
+        if 0 in self.out_indices:
+            outs.append(x)
+        x = self.maxpool(x)
         for i, layer_name in enumerate(self.res_layers):
             res_layer = getattr(self, layer_name)
             x = res_layer(x)
-            if i in self.out_indices:
+            if i+1 in self.out_indices:
                 outs.append(x)
         return tuple(outs)
 
     def train(self, mode=True):
         """Convert the model into training mode while keep normalization layer
         freezed."""
-        super(ResNet, self).train(mode)
+        super(ResNetW, self).train(mode)
         self._freeze_stages()
         if mode and self.norm_eval:
             for m in self.modules():
@@ -741,7 +747,7 @@ class ResNet(nn.Module):
                     m.eval()
 
 
-class ResNetV1d(ResNet):
+class ResNetV1d(ResNetW):
     r"""ResNetV1d variant described in `Bag of Tricks
     <https://arxiv.org/pdf/1812.01187.pdf>`_.
     Compared with default ResNet(ResNetV1b), ResNetV1d replaces the 7x7 conv in

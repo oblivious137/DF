@@ -7,6 +7,7 @@ trainset = _CFG(
     train = True,
     transforms = _CFG(
         name = "Compose",
+        style="pytorch",
         img_std = [0.229, 0.224, 0.225],
         img_mean = [0.485, 0.456, 0.406],
         transforms = [
@@ -14,6 +15,7 @@ trainset = _CFG(
                 name = "Resize",
                 shapes = [(1000, 240), (1000, 280), (1000, 320), (1000, 360), (1000, 400), (1000, 440), (1000, 480), (1000, 520)],
                 base_size = 32,
+                pad_mode='resize',
             ),
             _CFG(
                 name = "Crop",
@@ -33,7 +35,7 @@ trainset = _CFG(
                 transforms = [
                     _CFG(
                         name = "Rotate",
-                        angle_range = (-30, 30)
+                        angle_range = (-25, 25)
                     ),
                     _CFG(
                         name = "ShearX",
@@ -50,6 +52,12 @@ trainset = _CFG(
                     _CFG(
                         name = "ScaleY",
                         scale = (0.8, 1.2)
+                    ),
+                    _CFG(
+                        name = "PiecewiseAffine",
+                        scale = (0.01, 0.05),
+                        nb_rows = (2, 6),
+                        nb_cols = (2, 6),
                     ),
                 ],
                 select_range = 3,
@@ -111,6 +119,25 @@ valset = _CFG(
     root = r"D:\subject\DataFountain\train_dataset",
     split_file = "valid.txt",
     load_mask = True,
+    train = False,
+    transforms = _CFG(
+        name = "Compose",
+        img_std = [0.229, 0.224, 0.225],
+        img_mean = [0.485, 0.456, 0.406],
+        transforms = [
+            _CFG(
+                name = "Resize",
+                shapes = [(1000, 400)],
+                base_size = 32,
+            )
+        ]
+    )
+)
+
+testset = _CFG(
+    root = r"D:\subject\DataFountain\test_dataset_A",
+    split_file = "test.txt",
+    load_mask = False,
     train = False,
     transforms = _CFG(
         name = "Compose",
